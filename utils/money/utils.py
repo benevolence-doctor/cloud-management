@@ -51,29 +51,6 @@ def monthlybill(id, month):
 
     return result
 
-def monthlyinstanceconsumption(business_line, env, month):
-    '''
-    实例月账单详情查询
-    :param business_line:
-    :param env:
-    :param month:
-    :return:
-    '''
-    pass
-    # env_result = MonthlySum.objects.filter(businessLine=business_line, env=env, billingCycle=month).values_list(
-    #
-    # )
-    #
-    #
-    #
-    # try:
-    #     pass
-    # except Exception as e:
-    #     print (e)
-    #     result = []
-    #
-    # return result
-
 def accountbalance(id):
     '''
     查询账户余额信息
