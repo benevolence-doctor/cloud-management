@@ -1,0 +1,39 @@
+开发API规范说明
+1. 类或者函数定义后添加备注信息,
+   正式写代码前保留一行空行隔开
+   return 前保留一行空行隔开
+   每个函数或者类之间保留一行空行隔开
+
+例如：
+class AccountBalanceView(APIView):
+    '''
+    查询可用余额信息
+    '''
+
+    def post(self, request, *args, **kwargs):
+        ret = {'code': 1000, 'msg': None}
+        try:
+            key_id = request._request.POST.get('key_id')
+            key_secret = request._request.POST.get('key_secret')
+            result = accountbalance(key_id, key_secret)
+            if result:
+                ret['data'] = result
+        except Exception as e:
+            ret['code'] = 1002
+            ret['msg'] = str(e)
+
+        return JsonResponse(ret)
+
+class Atest():
+    pass
+
+2.
+
+统计smart-sit环境的消费金额
+
+key_id 获取所有资源
+统计smart-sit开头的资金进行合并
+
+
+通过接口插入数据库数据
+通过调用数据库的字段进行计算金额
