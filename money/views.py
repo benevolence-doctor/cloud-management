@@ -4,8 +4,11 @@ from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import serializers
-from utils.money.utils import monthlybill, monthlyinstanceconsumption, accountbalance, availableinstances
+from utils.money.utils import monthlybill, accountbalance, availableinstances
 from api import models
+from django.db.models import Sum, Count
+
+
 
 class MonthlyBillView(APIView):
     '''
@@ -33,10 +36,11 @@ class ModelMonthlySumSerializer(serializers.ModelSerializer):
     businessLine = serializers.CharField(max_length=255)
     env = serializers.CharField(max_length=255)
     pretaxAmount = serializers.FloatField()
+    instanceTotals = serializers.IntegerField()
 
     class Meta:
         model = models.MonthlySum
-        fields = ['billingCycle', 'productName', 'businessLine', 'env', 'pretaxAmount']
+        fields = ['billingCycle', 'productName', 'businessLine', 'env', 'pretaxAmount', 'instanceTotals']
 
 
 class MonthlySumView(APIView):
@@ -47,19 +51,56 @@ class MonthlySumView(APIView):
     def get(self, request, *args, **kwargs):
 
         # 序列化，将数据库查询字段序列化为字典
-        data_list = models.MonthlySum.objects.all()
-        ser = ModelMonthlySumSerializer(instance=data_list, many=True)
 
-        return Response(ser.data)
+        result = {'code': 1000, 'msg': None}
+        try:
+            data_list = models.MonthlySum.objects.all()
+            ser = ModelMonthlySumSerializer(instance=data_list, many=True)
+            result['data'] = ser.data
+        except Exception as e:
+            result['code'] = 1002
+            result['msg'] = str(e)
+
+        return Response(result)
 
     def post(self, request, *args, **kwargs):
-        ser = ModelMonthlySumSerializer(data=request.data)
-        if ser.is_valid():
-            print(ser.validated_data)
-        else:
-            print(ser.errors)
 
-        return Response('POST请求，响应内容')
+        businessLine = request._request.POST.get('business_line')
+        env = request._request.POST.get('env')
+        billingCycle = request._request.POST.get('billingCycle')
+        result = {'code': 1000, 'msg': None}
+        try:
+            if businessLine =='all'  and env == 'all':
+                data_list = models.MonthlySum.objects.filter(billingCycle=billingCycle)
+                totals = models.MonthlySum.objects.filter(billingCycle=billingCycle).values(
+                    'billingCycle').annotate(sum_money=Sum('pretaxAmount'), sum_num=Sum('instanceTotals')
+                                                                    ).values('billingCycle', 'sum_money', 'sum_num')
+            elif businessLine == 'all' and env != 'all':
+                data_list = models.MonthlySum.objects.filter(env=env, billingCycle=billingCycle)
+                totals = models.MonthlySum.objects.filter(env=env, billingCycle=billingCycle).values(
+                    'env', 'billingCycle').annotate(sum_money=Sum('pretaxAmount'), sum_num=Sum('instanceTotals')
+                                                                    ).values('billingCycle', 'sum_money', 'sum_num')
+            elif businessLine != 'all' and env == 'all':
+                data_list = models.MonthlySum.objects.filter(businessLine=businessLine, billingCycle=billingCycle)
+                totals = models.MonthlySum.objects.filter(businessLine=businessLine, billingCycle=billingCycle).values(
+                    'businessLine', 'billingCycle').annotate(sum_money=Sum('pretaxAmount'), sum_num=Sum('instanceTotals')
+                                                                    ).values('billingCycle', 'sum_money', 'sum_num')
+            else:
+                data_list = models.MonthlySum.objects.filter(businessLine=businessLine, env=env, billingCycle=billingCycle)
+                totals = models.MonthlySum.objects.filter(businessLine=businessLine, env=env, billingCycle=billingCycle).values(
+                    'businessLine', 'env', 'billingCycle').annotate(sum_money=Sum('pretaxAmount'), sum_num=Sum('instanceTotals')
+                                                                    ).values('billingCycle', 'sum_money', 'sum_num')
+
+            ser = ModelMonthlySumSerializer(instance=data_list, many=True)
+            result['totals'] = totals
+            result['data'] = ser.data
+
+        except Exception as e:
+            result['code'] = 1002
+            result['msg'] = str(e)
+
+        return Response(result)
+
 
 class AccountBalanceView(APIView):
     '''
@@ -79,31 +120,3 @@ class AccountBalanceView(APIView):
             ret['msg'] = str(e)
 
         return JsonResponse(ret)
-
-class AvailableInstancesView(APIView):
-    '''
-    实例查询接口，查询用户可用实例列表
-    '''
-
-    def post(self, request, *args, **kwargs):
-        ret = {'code': 1000, 'msg': None}
-        try:
-            key_id = request._request.POST.get('key_id')
-            key_secret = request._request.POST.get('key_secret')
-            pagenum = request._request.POST.get('pagenum')
-            result = availableinstances(key_id, key_secret, pagenum)
-            result_total = []
-            if result:
-                for pagenums in range(2, int(result[0]['TotalNum']) + 1):
-                    results = availableinstances(key_id, key_secret, month, pagenum)
-                    results.pop(0)
-                    result_total.extend(results)
-            result_total.extend(result)
-            ret['data'] = {'TotalCount': result[0]['TotalCount'],
-                           'Instancelist': result[1:]}
-        except Exception as e:
-            ret['code'] = 1002
-            ret['msg'] = str(e)
-
-        return JsonResponse(ret)
-

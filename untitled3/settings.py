@@ -39,9 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api.apps.ApiConfig',
     'rest_framework',
+    # 'django_crontab',
     'money',
-    #'other',
-    # 'api'
 ]
 
 MIDDLEWARE = [
@@ -74,7 +73,9 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'untitled3.wsgi.application'
-
+# CRONJOBS = [
+#     (),
+# ]
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases

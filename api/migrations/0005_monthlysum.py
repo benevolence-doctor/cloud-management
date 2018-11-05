@@ -19,6 +19,7 @@ class Migration(migrations.Migration):
                 ('businessLine', models.CharField(db_column='business_line', max_length=255)),
                 ('env', models.CharField(db_column='env', max_length=255)),
                 ('pretaxAmount', models.FloatField(db_column='pretax_amount', max_length=255)),
+                ('instanceTotals', models.IntegerField(db_column='instance_totals')),
                 ('remark', models.CharField(db_column='remark', max_length=255)),
             ],
         ),

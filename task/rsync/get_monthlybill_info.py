@@ -69,30 +69,42 @@ def get_monthlybill_info(keys, month):
             Items = response_json['Data']['Items']['Item']
 
             for item in Items:
+
                 subscriptionType = item.get('SubscriptionType')
                 pretaxAmount = item.get('PretaxAmount')
                 productCode = item.get('ProductCode')
                 regionId = item.get('Region', '')
                 productName = ProductName.objects.filter(productcode=productCode).first()
+                if productName is None:productName='unknown'
+
                 instanceId = item['InstanceID'].split(';')[0]
+                instanceName = ''
 
                 if productCode == 'ecs':
-                    instanceName = EcsInfo.objects.filter(instanceId=instanceId).values('instanceName').first().get('instanceName')
+                    ecs_name = EcsInfo.objects.filter(instanceId=instanceId).values('instanceName').first()
+                    if ecs_name is not None:instanceName = ecs_name.get('instanceName')
                 elif productCode == 'rds':
-                    instanceName = RdsInfo.objects.filter(instanceId=instanceId).values('instanceName').first().get('instanceName')
+                    rds_name = RdsInfo.objects.filter(instanceId=instanceId).values('instanceName').first()
+                    if rds_name is not None:instanceName = rds_name.get('instanceName')
                 elif productCode == 'slb':
-                    instanceName = SlbInfo.objects.filter(instanceId=instanceId).values('instanceName').first().get('instanceName')
+                    slb_name = SlbInfo.objects.filter(instanceId=instanceId).values('instanceName').first()
+                    if slb_name is not None:instanceName = slb_name.get('instanceName')
                 elif productCode == 'eip':
-                    instanceName = EipInfo.objects.filter(allocationId=instanceId).values('allocationName').first().get('allocationName')
+                    eip_name = EipInfo.objects.filter(allocationId=instanceId).values('allocationName').first()
+                    if eip_name is not None:instanceName = eip_name.get('allocationName')
                 elif productCode == 'yundisk':
+                    keys['region_id'] = regionId
                     keys['instanceId'] = instanceId
-                    instanceIds = get_yundisk_info(keys).get('instanceId')
-                    instanceName = EcsInfo.objects.filter(instanceId=instanceIds).values('instanceName').first().get('instanceName')
+                    instanceIds = get_yundisk_info(keys).get('instanceId', '')
+                    if instanceIds:
+                        instanceName = EcsInfo.objects.filter(instanceId=instanceIds).values('instanceName').first().get('instanceName')
                 elif productCode == 'nat_gw':
+                    keys['region_id'] = keys['region_id'].split(';')[0]
                     keys['instanceId'] = instanceId
-                    instanceName = get_nat(keys).get('Name')
-                else:
-                    instanceName = ''
+                    instanceName = get_nat(keys).get('Name', '')
+
+
+                # print (instanceId, productCode, instanceName)
 
                 if instanceName:
                     businessLine = instanceName.split('-')[0]
@@ -112,7 +124,8 @@ def get_monthlybill_info(keys, month):
                 else:
                     MonthlybillInfo.objects.filter(instanceId = instanceId).update(
                         subscriptionType = subscriptionType, pretaxAmount = pretaxAmount, productCode = productCode,
-                        instanceName = instanceName, regionId = regionId,businessLine = businessLine, env = env
+                        instanceName = instanceName, regionId = regionId,
+                        businessLine = businessLine, env = env
                     )
 
 
@@ -127,8 +140,17 @@ if __name__ == '__main__':
     import time
     print (time.asctime( time.localtime(time.time()) ))
     month = '2018-09'
+
     for keys in get_key_bss():
+        print (keys)
         get_monthlybill_info(keys, month)
 
     print ("sync completed -------------------------------")
     print (time.asctime( time.localtime(time.time()) ))
+
+'''
+调试用
+keys = {'key_id': 'LTAIQc01LyuHWKsh', 'key_secret': 'RNxH8q3dLwCJUY5NZuAtqbSGT9CL87',
+     'region_id': 'cn-hangzhou', 'default_env': 'ding-uat'}
+    get_monthlybill_info(keys, month)
+'''

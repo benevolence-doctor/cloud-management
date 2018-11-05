@@ -113,6 +113,7 @@ class AvailableInstancesView(APIView):
             key_secret = request._request.POST.get('key_secret')
             pagenum = request._request.POST.get('pagenum')
             result = availableinstances(key_id, key_secret, pagenum)
+            month='2018-09'
             result_total = []
             if result:
                 for pagenums in range(2, int(result[0]['TotalNum']) + 1):

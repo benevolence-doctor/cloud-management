@@ -197,3 +197,14 @@ def get_nat(keys):
     return result
 
 
+# try:
+#     keys = {
+#         'key_id': 'LTAIEsW5u3Mdv0DY',
+#         'key_secret': 'UVko4RRAT2F8Q350H1hUSdhURQHDUZ',
+#         'region_id': 'cn-shanghai',
+#         'instanceId': 'd-uf6bhisalou7qj2ifmnk'
+#
+#     }
+#     print (get_yundisk_info(keys))
+# except Exception as e:
+#     print (e)

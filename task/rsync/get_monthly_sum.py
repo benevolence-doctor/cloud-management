@@ -13,7 +13,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "untitled3.settings")
 import django
 django.setup()
 
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from api.models import  MonthlybillInfo, MonthlySum
 from django.conf import settings
 
@@ -21,8 +21,8 @@ def get_monthly_sum(business_line, env, billingCycle):
 
     try:
         result_sum = MonthlybillInfo.objects.filter(businessLine=business_line, env=env, billingCycle=billingCycle).values(
-            'productName').annotate(sum=Sum('pretaxAmount')).values('billingCycle','productName','sum')
-        print (result_sum)
+            'productName').annotate(sum=Sum('pretaxAmount'), count=Count('productName')).values('billingCycle','productName','sum', 'count')
+
     except Exception as e:
         print (e)
 
@@ -33,14 +33,14 @@ def get_monthly_sum(business_line, env, billingCycle):
         except MonthlySum.DoesNotExist:
             MonthlySum.objects.create(
                 billingCycle=billingCycle, businessLine=business_line, env=env,
-                pretaxAmount=item.get('sum'), productName=item.get('productName')
+                pretaxAmount=item.get('sum'), instanceTotals=item.get('count'), productName=item.get('productName')
 
             )
         else:
             MonthlySum.objects.filter(businessLine=business_line, env=env, billingCycle=billingCycle,
                                     productName=item.get('productName')).update(
                 billingCycle=billingCycle, businessLine=business_line, env=env,
-                pretaxAmount=item.get('sum'), productName=item.get('productName')
+                pretaxAmount=item.get('sum'), instanceTotals=item.get('count'), productName=item.get('productName')
 
             )
 

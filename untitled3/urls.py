@@ -28,5 +28,5 @@ urlpatterns = [
     # path(r'api/v1/monthlybill/', views.MonthlyBillView.as_view()),
     # path(r'api/v1/monthlyinstanceconsumption/', views.MonthlyInstanceConsumptionView.as_view())
     # path(r'api/v1/accountbalance/', views.AccountBalanceView.as_view()),
-    # path(r'api/v1/availableinstances/', views.AvailableInstancesView.as_view())
+    path(r'api/v1/availableinstances/', views.AvailableInstancesView.as_view())
 ]
