@@ -6,10 +6,8 @@ from aliyunsdkcore.client import AcsClient
 from aliyunsdkbssopenapi.request.v20171214 import QueryMonthlyBillRequest
 from aliyunsdkbssopenapi.request.v20171214 import QueryAccountBalanceRequest
 from aliyunsdkbssopenapi.request.v20171214 import QueryAvailableInstancesRequest
-
-
+from django.db.models import Sum, Count, Q
 from api.models import KeyIdSecret, MonthlybillInfo, MonthlySum
-
 
 def monthlybill(id, month):
     '''
@@ -51,7 +49,7 @@ def monthlybill(id, month):
 
     return result
 
-def accountbalance(id):
+def accountbalance(keys):
     '''
     查询账户余额信息
     :param key_id: Access Key ID
@@ -59,9 +57,10 @@ def accountbalance(id):
     :return: 返回一个字典
     '''
 
-    obj = BusinessLine.objects.filter(pk=id).values('key_id', 'key_secret', 'region_id').first()
-    key_id = obj['key_id']
-    key_secret = obj['key_secret']
+    key_id = keys.get('keyId')
+    key_secret = keys.get('keySecret')
+    remark = keys.get('remark')
+    accountNumber = keys.get('accountNumber')
 
     client = AcsClient(key_id, key_secret);
     request = QueryAccountBalanceRequest.QueryAccountBalanceRequest()
@@ -70,8 +69,10 @@ def accountbalance(id):
     try:
         response = client.do_action_with_exception(request)
         response_json = json.loads(response)
+        result['阿里云账号'] = accountNumber
+        result['备注'] = remark
         result['可用余额'] = response_json['Data']['AvailableCashAmount']
-        ret['data'] = result
+
     except Exception as e:
         print(e)
 
@@ -139,3 +140,36 @@ def availableinstances(id, pagenum):
         result = []
 
     return result
+
+def get_productcode_num(keys):
+    '''
+
+    :param keys: billingCycle env businessLine
+    :return:
+    '''
+    keys = eval(keys)
+    billingCycle = keys.get('billingCycle', '')
+    businessLine = keys.get('businessLine', '')
+    env = keys.get('env', '')
+
+    if businessLine == '' and env == '':
+        filters = (Q(billingCycle=billingCycle))
+    elif businessLine == '' and env != '':
+        filters = (Q(billingCycle=billingCycle) & Q(env=env))
+    elif businessLine != '' and env == '':
+        filters = (Q(billingCycle=billingCycle) & Q(businessLine=businessLine))
+    elif businessLine != '' and env != '':
+        filters = (Q(billingCycle=billingCycle) & Q(businessLine=businessLine) & Q(env=env))
+
+
+    obj = MonthlybillInfo.objects.filter(filters).values('productCode').distinct()
+    result = {}
+
+    for i in obj:
+        productCode = i.get('productCode')
+        cobj = MonthlybillInfo.objects.filter(filters,productCode=productCode ).values(
+            'productCode').annotate(count=Count('productCode')).values('productName' ,'count')[0]
+        result['billingCycle'] = billingCycle
+        result[cobj.get('productName')] = cobj.get('count')
+
+    return  result

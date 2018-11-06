@@ -27,19 +27,19 @@
 			sit 
 			uat
 			prod	
-		billingCycle: 结算周期
+		billing_cycle: 结算周期
 			可选参数：
 			格式为：2018-08
 	2) 接口示例
 		例如：http://127.0.0.1:8000/api/v1/money/monthlysum/
-		传入参数:{'business_line': 'ding', 'env': 'all', 'billingCycle': '2018-09'}
+		传入参数:{'business_line': 'ding', 'env': 'all', 'billing_cycle': '2018-09'}
 		返回结果：
 			{
 			"code": 1000,
 			"msg": null,
 			"totals": [
 				{
-					"billingCycle": "2018-09",
+					"billing_cycle": "2018-09",
 					"sum_money": 3509.023,
 					"sum_num": 35
 				}
@@ -53,27 +53,61 @@
 					"pretaxAmount": 0.01,
 					"instanceTotals": 1
 				},	...]}
-		
-2. 当前阿里云账号剩余可用金额
-	1) 接口说明：
-	2) 接口示例
-	
+			
 2. 每月所有业务线的产品消费明细
-    url: http://guoj.sqbj.com/api/v1/monthlyinstanceconsumption
-	传入参数：env=all
-3. 每月所有业务线剩余可用金额
+    1) 接口说明
+		url: http://127.0.0.1:8000/api/v1/money/monthlybillinfo/
+		method: post
+		传入参数说明:
+		business_line: 同上
+		env: 同上
+		billingCycle:同上	
+	2) 接口示例
+		url: http://127.0.0.1:8000/api/v1/money/monthlybillinfo/
+		传入参数:{'business_line': 'ding', 'env': 'all', 'billing_cycle': '2018-09'}
+       返回结果:
+		   {
+			"code": 1000,
+			"msg": null,
+			"totals": {
+				"billingCycle": "2018-09",
+				"弹性公网IP": 7,
+				"NAT网关": 1,
+				"关系型数据库RDS": 2,
+				"负载均衡SLB": 2,
+				"云服务器ECS": 20,
+				"云盘": 2
+			},
+			"data": [
+				{
+					"billingCycle": "2018-09",
+					"productName": "弹性公网IP",
+					"instanceId": "eip-bp14ckaaz7eqb6mfpozlv",
+					"instanceName": "ding-prod-m1",
+					"businessLine": "ding",
+					"env": "prod",
+					"subscriptionType": "后付费",
+					"pretaxAmount": 0
+				},
+						
 	
-3. 每月单个业务线消费总览
-	url: http://guoj.sqbj.com/api/v1/monthlybill/(+d)/
-4. 每月单个业务线的产品消费明细
-	url: http://guoj.sqbj.com/api/v1/monthlyinstanceconsumption/(+d)/
-
+3. 阿里云账号剩余可用金额
+	1) 接口说明
+		url: http://127.0.0.1:8000/api/v1/money/accountbalance/
+		method: get
+	2) 接口示例
+		url: http://127.0.0.1:8000/api/v1/money/accountbalance/
+		返回解决：
+		{
+		"code": 1000,
+		"msg": null,
+		"data": [
+			{
+				"阿里云账号": "development@sqbj.com",
+				"备注": "老智社区sit账号",
+				"可用余额": "29,393.50"
+			},...]}
 	
-5. 每月单个业务线不同环境消费总览
-	url: http://guoj.sqbj.com/api/v1/monthlybill/(+d)/(+D)/
-	url: http://guoj.sqbj.com/api/v1/monthlyinstanceconsumption/(+d)/(+D)/
-6. 每月单个业务线不同环境消费明细
-
 
 
 

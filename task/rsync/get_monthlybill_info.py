@@ -69,17 +69,21 @@ def get_monthlybill_info(keys, month):
             Items = response_json['Data']['Items']['Item']
 
             for item in Items:
-
-                subscriptionType = item.get('SubscriptionType')
                 pretaxAmount = item.get('PretaxAmount')
                 productCode = item.get('ProductCode')
                 regionId = item.get('Region', '')
-                productName = ProductName.objects.filter(productcode=productCode).first()
-                if productName is None:productName='unknown'
-
                 instanceId = item['InstanceID'].split(';')[0]
                 instanceName = ''
+                productName = ProductName.objects.filter(productcode=productCode).first()
+                if productName is None:
+                    productName = 'unknown'
 
+                subscriptionType = item.get('SubscriptionType')
+                if subscriptionType == 'PayAsYouGo':
+                    subscriptionType = '后付费'
+                elif subscriptionType == 'Subscription':
+                    subscriptionType = '预付费'
+                print (subscriptionType)
                 if productCode == 'ecs':
                     ecs_name = EcsInfo.objects.filter(instanceId=instanceId).values('instanceName').first()
                     if ecs_name is not None:instanceName = ecs_name.get('instanceName')
@@ -102,7 +106,6 @@ def get_monthlybill_info(keys, month):
                     keys['region_id'] = keys['region_id'].split(';')[0]
                     keys['instanceId'] = instanceId
                     instanceName = get_nat(keys).get('Name', '')
-
 
                 # print (instanceId, productCode, instanceName)
 

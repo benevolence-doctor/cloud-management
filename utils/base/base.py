@@ -1,7 +1,20 @@
 # -*- coding: utf8 -*-
+import sys
+import os
 import bs4
 import requests
-from api.models import  BusinessLine
+
+
+# # 调试环境使用
+sys.path.append(r"C:\Users\gj\PycharmProjects\untitled3")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "untitled3.settings")
+import django
+django.setup()
+
+
+from api.models import  BusinessLine, KeyIdSecret
+from rest_framework import serializers
+from django.conf import settings
 
 
 
@@ -59,3 +72,26 @@ def get_productname(productcode):
 
     return CommodityName
 
+
+class KeyIdSecretSerializer(serializers.ModelSerializer):
+    keyId = serializers.CharField(max_length=255)
+    keySecret = serializers.CharField(max_length=255)
+    regionId = serializers.CharField(max_length=255)
+    accountNumber = serializers.CharField(max_length=255)
+    defaultEnv = serializers.CharField(max_length=255)
+    remark = serializers.CharField(max_length=255)
+
+    class Meta:
+        model = KeyIdSecret
+        fields = '__all__'
+
+
+
+def get_key():
+    '''获取key'''
+    result = {}
+    data_list = KeyIdSecret.objects.all()
+    ser = KeyIdSecretSerializer(instance=data_list, many=True)
+    result['data'] = ser.data
+
+    return result
