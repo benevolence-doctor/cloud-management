@@ -185,7 +185,6 @@ class SlbInfoView(APIView):
 
         return Response(ret)
 
-
 class EipInfoView(APIView):
     '''弹性公网IP实例'''
 

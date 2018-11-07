@@ -83,7 +83,7 @@ def get_monthlybill_info(keys, month):
                     subscriptionType = '后付费'
                 elif subscriptionType == 'Subscription':
                     subscriptionType = '预付费'
-                print (subscriptionType)
+
                 if productCode == 'ecs':
                     ecs_name = EcsInfo.objects.filter(instanceId=instanceId).values('instanceName').first()
                     if ecs_name is not None:instanceName = ecs_name.get('instanceName')
@@ -107,8 +107,6 @@ def get_monthlybill_info(keys, month):
                     keys['instanceId'] = instanceId
                     instanceName = get_nat(keys).get('Name', '')
 
-                # print (instanceId, productCode, instanceName)
-
                 if instanceName:
                     businessLine = instanceName.split('-')[0]
                     env = instanceName.split('-')[1]
@@ -117,7 +115,8 @@ def get_monthlybill_info(keys, month):
                     env = default_env.split('-')[1]
 
                 try:
-                    MonthlybillInfo.objects.get(instanceId = instanceId)
+                    MonthlybillInfo.objects.get(instanceId = instanceId, billingCycle = month)
+
                 except MonthlybillInfo.DoesNotExist:
                     MonthlybillInfo.objects.create(
                         subscriptionType = subscriptionType, pretaxAmount = pretaxAmount, productCode = productCode,
@@ -125,10 +124,9 @@ def get_monthlybill_info(keys, month):
                         businessLine = businessLine, env = env, billingCycle = month, regionId = regionId
                     )
                 else:
-                    MonthlybillInfo.objects.filter(instanceId = instanceId).update(
+                    MonthlybillInfo.objects.filter(instanceId = instanceId, billingCycle = month).update(
                         subscriptionType = subscriptionType, pretaxAmount = pretaxAmount, productCode = productCode,
-                        instanceName = instanceName, regionId = regionId,
-                        businessLine = businessLine, env = env
+                        instanceName = instanceName,businessLine = businessLine, env = env, regionId = regionId
                     )
 
 
@@ -153,7 +151,7 @@ if __name__ == '__main__':
 
 '''
 调试用
-keys = {'key_id': 'LTAIQc01LyuHWKsh', 'key_secret': 'RNxH8q3dLwCJUY5NZuAtqbSGT9CL87',
+keys = {'key_id': '', 'key_secret': '',
      'region_id': 'cn-hangzhou', 'default_env': 'ding-uat'}
     get_monthlybill_info(keys, month)
 '''

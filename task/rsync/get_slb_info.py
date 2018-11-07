@@ -86,10 +86,6 @@ def get_slb_info(keys):
                 else:
                     BackendServers.append(i)
 
-            # print(
-            #     instanceId, instanceName, productCode, businessLine, env, regionId, status,
-            #     instanceNetworkType, ipaddress, BackendServers, ListenPorts, creationTime, expiredTime
-            # )
             try:
                 SlbInfo.objects.get(instanceId = instanceId)
             except SlbInfo.DoesNotExist:
