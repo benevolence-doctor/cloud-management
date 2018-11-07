@@ -140,6 +140,20 @@ class EcsInfoView(APIView):
 
         return Response(ret)
 
+class EcsInfoIdView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        ret = {'code': 1000, 'msg': None}
+        try:
+
+            data_list = models.EcsInfo.objects.filter(pk=id).first()
+            ser = serializers.EcsInfoSerializer(instance=data_list)
+            ret['data'] = ser.data
+        except Exception as e:
+            ret['code'] = 1002
+            ret['msg'] = str(e)
+
+        return Response(ret)
 
 class RdsInfoView(APIView):
     '''RDS实例'''

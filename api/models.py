@@ -18,9 +18,9 @@ class UserToken(models.Model):
     token = models.CharField(max_length=64)
 
 class BusinessLine(models.Model):
-    ''' 业务线不同环境信息 '''
+    ''' 业务线信息 '''
 
-    env = models.CharField(db_column='env', max_length=255, default='sit')
+    businessCode = models.CharField(db_column='business_code', max_length=255, default='sit')
     businessLine = models.CharField(db_column='business_line', max_length=255)
     remark = models.CharField(db_column='remark', max_length=1024)
 

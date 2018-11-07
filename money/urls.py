@@ -12,6 +12,7 @@ urlpatterns = [
     path(r'accountbalance/', views.AccountBalanceView.as_view()),
     #ECS实例
     path(r'ecsinfo/', views.EcsInfoView.as_view()),
+    # path(r'ecsinfo/<int:pk>/', views.EcsInfoIdView.as_view(), name='ecsinfo-id'),
     #RDS实例
     path(r'rdsinfo/', views.RdsInfoView.as_view()),
     #SLB实例

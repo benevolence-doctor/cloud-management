@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             name='BusinessLine',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('env', models.CharField(db_column='env', default='sit', max_length=255)),
+                ('businessCode', models.CharField(db_column='business_code', default='sit', max_length=255)),
                 ('businessLine', models.CharField(db_column='business_line', max_length=255)),
                 ('remark', models.CharField(db_column='remark', max_length=1024)),
             ],
