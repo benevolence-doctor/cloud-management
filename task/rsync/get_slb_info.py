@@ -63,15 +63,28 @@ def get_slb_info(keys):
             businessLine = instanceName.split('-')[0]
             env = instanceName.split('-')[0]
             regionId = item.get('RegionId')
-            status = item.get('LoadBalancerStatus')
             instanceNetworkType = item.get('NetworkType')
             internetChargeType = item.get('InternetChargeType')
             ipaddress = item.get('Address')
             keys['instanceId'] = instanceId
-            BackendServers = get_slb_item(keys).get('BackendServers')
             ListenPorts = get_slb_item(keys).get('ListenPorts')
             creationTime = item.get('CreateTime')
             expiredTime = get_slb_item(keys).get('expiredTime')
+
+            status = item.get('LoadBalancerStatus')
+            if status == 'active':
+                status = '运行中'
+            elif status == 'inactive':
+                status = '停止'
+
+            BackendServer_re = get_slb_item(keys).get('BackendServers')
+            BackendServers = []
+            for i in BackendServer_re:
+                i_re = EcsInfo.objects.filter(instanceId=i).values('instanceName').first()
+                if i_re is not None:
+                    BackendServers.append(i_re.get('instanceName'))
+                else:
+                    BackendServers.append(i)
 
             # print(
             #     instanceId, instanceName, productCode, businessLine, env, regionId, status,

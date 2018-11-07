@@ -62,6 +62,12 @@ def get_eip_info(keys):
 
             allocationId = item.get('AllocationId')
             instanceId = item.get('InstanceId')
+            productCode = 'eip'
+            regionId = item.get('RegionId')
+            ipaddress = item.get('IpAddress')
+            creationTime = item.get('AllocationTime')
+            expiredTime = item.get('ExpiredTime')
+
             instanceType = item.get('InstanceType')
             if instanceType == 'SlbInstance':
                 allocationName = SlbInfo.objects.filter(instanceId=instanceId).values('instanceName').first().get('instanceName')
@@ -80,12 +86,12 @@ def get_eip_info(keys):
                 allocationName = ''
                 businessLine = ''
                 env = ''
-            productCode = 'eip'
-            regionId = item.get('RegionId')
+
             status = item.get('Status')
-            ipaddress = item.get('IpAddress')
-            creationTime = item.get('AllocationTime')
-            expiredTime = item.get('ExpiredTime')
+            if status == 'InUse':
+                status = '已分配'
+            elif status == 'Available':
+                status = '未分配'
 
             # print (
             #     allocationId,allocationName,instanceId,instanceType,status, businessLine, env,

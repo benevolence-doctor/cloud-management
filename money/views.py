@@ -3,13 +3,12 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import serializers
 from utils.money.utils import monthlybill, accountbalance, availableinstances
 from api import models
 from django.db.models import Sum, Count, Q
 from utils.money import utils
 from utils.base import base
-
+from utils.serializers import serializers
 
 class MonthlyBillView(APIView):
     '''
@@ -31,38 +30,10 @@ class MonthlyBillView(APIView):
 
         return JsonResponse(ret)
 
-class ModelMonthlySumSerializer(serializers.ModelSerializer):
-    billingCycle = serializers.CharField(max_length=255)
-    productName = serializers.CharField(max_length=255)
-    businessLine = serializers.CharField(max_length=255)
-    env = serializers.CharField(max_length=255)
-    pretaxAmount = serializers.FloatField()
-    instanceTotals = serializers.IntegerField()
-
-    class Meta:
-        model = models.MonthlySum
-        fields = ['billingCycle', 'productName', 'businessLine', 'env', 'pretaxAmount', 'instanceTotals']
-
-
 class MonthlySumView(APIView):
     '''
     产品code业务线和环境月账单汇总查询
     '''
-
-    # def get(self, request, *args, **kwargs):
-    #
-    #     # 序列化，将数据库查询字段序列化为字典
-    #
-    #     result = {'code': 1000, 'msg': None}
-    #     try:
-    #         data_list = models.MonthlySum.objects.all()
-    #         ser = ModelMonthlySumSerializer(instance=data_list, many=True)
-    #         result['data'] = ser.data
-    #     except Exception as e:
-    #         result['code'] = 1002
-    #         result['msg'] = str(e)
-    #
-    #     return Response(result)
 
     def post(self, request, *args, **kwargs):
 
@@ -70,38 +41,33 @@ class MonthlySumView(APIView):
         env = request._request.POST.get('env')
         billingCycle = request._request.POST.get('billing_cycle')
         result = {'code': 1000, 'msg': None}
+        bus_re = models.MonthlySum.objects.filter(billingCycle=billingCycle).values('businessLine').distinct()
+        bus_list = [i.get('businessLine') for i in bus_re]
+        env_re = models.MonthlySum.objects.filter(billingCycle=billingCycle).values('env').distinct()
+        env_list = [i.get('env') for i in env_re]
+
         try:
             if businessLine =='all'  and env == 'all':
-                data_list = models.MonthlySum.objects.filter(billingCycle=billingCycle)
-                totals = models.MonthlySum.objects.filter(billingCycle=billingCycle).values(
-                    'billingCycle').annotate(sum_money=Sum('pretaxAmount'), sum_num=Sum('instanceTotals')
-                                                                    ).values('billingCycle', 'sum_money', 'sum_num')
+                keys = {'billingCycle': billingCycle, 'businessLine': bus_list, 'env': env_list}
             elif businessLine == 'all' and env != 'all':
-                data_list = models.MonthlySum.objects.filter(env=env, billingCycle=billingCycle)
-                totals = models.MonthlySum.objects.filter(env=env, billingCycle=billingCycle).values(
-                    'env', 'billingCycle').annotate(sum_money=Sum('pretaxAmount'), sum_num=Sum('instanceTotals')
-                                                                    ).values('billingCycle', 'sum_money', 'sum_num')
+                keys = {'billingCycle': billingCycle, 'businessLine': bus_list, 'env': env.split(',')}
             elif businessLine != 'all' and env == 'all':
-                data_list = models.MonthlySum.objects.filter(businessLine=businessLine, billingCycle=billingCycle)
-                totals = models.MonthlySum.objects.filter(businessLine=businessLine, billingCycle=billingCycle).values(
-                    'businessLine', 'billingCycle').annotate(sum_money=Sum('pretaxAmount'), sum_num=Sum('instanceTotals')
-                                                                    ).values('billingCycle', 'sum_money', 'sum_num')
+                keys = {'billingCycle': billingCycle, 'businessLine': businessLine.split(','), 'env': env_list}
             else:
-                data_list = models.MonthlySum.objects.filter(businessLine=businessLine, env=env, billingCycle=billingCycle)
-                totals = models.MonthlySum.objects.filter(businessLine=businessLine, env=env, billingCycle=billingCycle).values(
-                    'businessLine', 'env', 'billingCycle').annotate(sum_money=Sum('pretaxAmount'), sum_num=Sum('instanceTotals')
-                                                                    ).values('billingCycle', 'sum_money', 'sum_num')
+                keys = {'billingCycle': billingCycle, 'businessLine': businessLine.split(','), 'env': env.split(',')}
 
-            ser = ModelMonthlySumSerializer(instance=data_list, many=True)
+            bs_env = utils.get_business_env_money(keys)
+            sum_money = sum([i.get('sum_money') for i in bs_env])
+            sum_num = sum([i.get('sum_num') for i in bs_env])
+            totals = {'sum_money': sum_money,'sum_num': sum_num }
             result['totals'] = totals
-            result['data'] = ser.data
+            result['data'] = bs_env
 
         except Exception as e:
             result['code'] = 1002
             result['msg'] = str(e)
 
         return Response(result)
-
 
 class AccountBalanceView(APIView):
     '''
@@ -124,22 +90,6 @@ class AccountBalanceView(APIView):
 
         return JsonResponse(ret)
 
-class MonthlybillInfoSerializer(serializers.ModelSerializer):
-    billingCycle = serializers.CharField(max_length=255)
-    productName = serializers.CharField(max_length=255)
-    instanceId = serializers.CharField(max_length=255)
-    instanceName = serializers.CharField(max_length=255)
-    businessLine = serializers.CharField(max_length=255)
-    env = serializers.CharField(max_length=255)
-    subscriptionType = serializers.CharField(max_length=255)
-    pretaxAmount = serializers.FloatField()
-
-
-    class Meta:
-        model = models.MonthlybillInfo
-        fields = ['billingCycle', 'productName', 'instanceId', 'instanceName',
-                  'businessLine', 'env', 'subscriptionType','pretaxAmount']
-
 class MonthlybillInfoView(APIView):
 
     def post(self, request, *args, **kwargs):
@@ -147,7 +97,7 @@ class MonthlybillInfoView(APIView):
         businessLine = request._request.POST.get('business_line')
         env = request._request.POST.get('env')
         billingCycle = request._request.POST.get('billing_cycle')
-        result = {'code': 1000, 'msg': None}
+        ret = {'code': 1000, 'msg': None}
 
         try:
 
@@ -164,14 +114,75 @@ class MonthlybillInfoView(APIView):
                 data_list = models.MonthlybillInfo.objects.filter(businessLine=businessLine, env=env, billingCycle=billingCycle)
                 keys = {'billingCycle': billingCycle, 'businessLine': businessLine, 'env': env}
 
-            ser = MonthlybillInfoSerializer(instance=data_list, many=True)
+            ser = serializers.MonthlybillInfoSerializer(instance=data_list, many=True)
 
-            result['totals'] = utils.get_productcode_num(str(keys))
-            result['data'] = ser.data
+            ret['totals'] = utils.get_productcode_num(str(keys))
+            ret['data'] = ser.data
 
         except Exception as e:
-            result['code'] = 1002
-            result['msg'] = str(e)
+            ret['code'] = 1002
+            ret['msg'] = str(e)
 
-        return Response(result)
+        return Response(ret)
 
+class EcsInfoView(APIView):
+    '''ECS实例'''
+
+    def get(self, request, *args, **kwargs):
+        ret = {'code': 1000, 'msg': None}
+        try:
+            data_list = models.EcsInfo.objects.all()
+            ser = serializers.EcsInfoSerializer(instance=data_list, many=True)
+            ret['data'] = ser.data
+        except Exception as e:
+            ret['code'] = 1002
+            ret['msg'] = str(e)
+
+        return Response(ret)
+
+
+class RdsInfoView(APIView):
+    '''RDS实例'''
+
+    def get(self, request, *args, **kwargs):
+        ret = {'code': 1000, 'msg': None}
+        try:
+            data_list = models.RdsInfo.objects.all()
+            ser = serializers.RdsInfoSerializer(instance=data_list, many=True)
+            ret['data'] = ser.data
+        except Exception as e:
+            ret['code'] = 1002
+            ret['msg'] = str(e)
+
+        return Response(ret)
+
+class SlbInfoView(APIView):
+    '''负载均衡SLB实例'''
+
+    def get(self, request, *args, **kwargs):
+        ret = {'code': 1000, 'msg': None}
+        try:
+            data_list = models.SlbInfo.objects.all()
+            ser = serializers.SlbInfoSerializer(instance=data_list, many=True)
+            ret['data'] = ser.data
+        except Exception as e:
+            ret['code'] = 1002
+            ret['msg'] = str(e)
+
+        return Response(ret)
+
+
+class EipInfoView(APIView):
+    '''弹性公网IP实例'''
+
+    def get(self, request, *args, **kwargs):
+        ret = {'code': 1000, 'msg': None}
+        try:
+            data_list = models.EipInfo.objects.all()
+            ser = serializers.EipInfoSerializer(instance=data_list, many=True)
+            ret['data'] = ser.data
+        except Exception as e:
+            ret['code'] = 1002
+            ret['msg'] = str(e)
+
+        return Response(ret)

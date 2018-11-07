@@ -143,7 +143,7 @@ def availableinstances(id, pagenum):
 
 def get_productcode_num(keys):
     '''
-
+    根据月份 业务线 环境不同获取不同产品数量和消费总金额
     :param keys: billingCycle env businessLine
     :return:
     '''
@@ -168,8 +168,34 @@ def get_productcode_num(keys):
     for i in obj:
         productCode = i.get('productCode')
         cobj = MonthlybillInfo.objects.filter(filters,productCode=productCode ).values(
-            'productCode').annotate(count=Count('productCode')).values('productName' ,'count')[0]
+            'productCode').annotate(sum_money=Sum('pretaxAmount'), count=Count('productCode')).values(
+            'productName', 'count', 'sum_money')[0]
         result['billingCycle'] = billingCycle
-        result[cobj.get('productName')] = cobj.get('count')
+        result[cobj.get('productName') + '_count'] = cobj.get('count')
+        result[cobj.get('productName') + '_sum_money'] = cobj.get('sum_money')
+    return  result
+
+def get_business_env_money(keys):
+    '''获取不同环境业务线消费总金额'''
+
+    # keys = eval(keys)
+    billingCycle = keys.get('billingCycle', '')
+    businessLines = keys.get('businessLine', '')
+    envs = keys.get('env', '')
+    bs_env = []
+    result = []
+    for i in businessLines:
+        for j in envs:
+            bs_env.append({'businessLine': i, 'env': j})
+
+    for i in bs_env:
+        businessLine = i.get('businessLine')
+        env = i.get('env')
+        totals = MonthlySum.objects.filter(businessLine=businessLine, env=env, billingCycle=billingCycle).values(
+            'businessLine', 'env', 'billingCycle').annotate(sum_money=Sum('pretaxAmount'), sum_num=Sum('instanceTotals')
+                                                           ).values('billingCycle', 'businessLine', 'env', 'sum_money','sum_num')
+
+        if totals:
+            result.extend(totals)
 
     return  result
